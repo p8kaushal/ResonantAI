@@ -39,6 +39,7 @@ datasets/processed/
 *.mp3
 *.raw
 *.pcm
+*.ses
 temp/
 logs/
 *.log

@@ -5,7 +5,7 @@
 - [x] Step 2: System audio dependencies installation (portaudio, sounddevice, BlackHole / VB-Cable) — verified 2026-08-26
 - [x] Step 3: Supabase DDL migration (tables, indexes, RLS policies) — verified 2026-08-26
 - [x] Step 4: Dataset download & Torgo/UA-Speech augmentation — verified 2026-08-26
-- [ ] Step 5: Train Conformer Acoustic Normalizer & export to ONNX
+- [x] Step 5: Train Conformer Acoustic Normalizer & export to ONNX — verified 2026-08-26
 - [ ] Step 6: Apply static INT8 quantization to Normalizer
 - [ ] Step 7: Build thread-safe AudioRingBuffer & AudioStreamManager
 - [ ] Step 8: Implement ONNX Runtime execution engine
