@@ -7,7 +7,7 @@
 - [x] Step 4: Dataset download & Torgo/UA-Speech augmentation — verified 2026-08-26
 - [x] Step 5: Train Conformer Acoustic Normalizer & export to ONNX — verified 2026-08-26
 - [x] Step 6: Apply static INT8 quantization to Normalizer — verified 2026-08-26
-- [ ] Step 7: Build thread-safe AudioRingBuffer & AudioStreamManager
+- [x] Step 7: Build thread-safe AudioRingBuffer & AudioStreamManager — verified 2026-08-26
 - [ ] Step 8: Implement ONNX Runtime execution engine
 - [ ] Step 9: Integrate Vocos neural vocoder & SpeakerTimbreEncoder
 - [ ] Step 10: Build Electron + React system tray UI control center
