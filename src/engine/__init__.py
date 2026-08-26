@@ -7,10 +7,12 @@ from .quantizer import (
     DummyConformerNormalizer,
     export_normalizer_fp32,
     quantize_normalizer_to_int8,
+    export_and_quantize_normalizer,
 )
 
 __all__ = [
     "DummyConformerNormalizer",
     "export_normalizer_fp32",
     "quantize_normalizer_to_int8",
+    "export_and_quantize_normalizer",
 ]

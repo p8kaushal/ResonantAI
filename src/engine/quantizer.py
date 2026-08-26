@@ -8,9 +8,10 @@ as well as dynamic INT8 quantization for low-latency on-device speech inference.
 """
 
 import os
+import time
 import inspect
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -112,11 +113,11 @@ def export_normalizer_fp32(
 
 
 def quantize_normalizer_to_int8(
-    output_fp32_path: str,
-    output_int8_path: str
+    output_fp32_path: str = "models/exported/normalizer_fp32.onnx",
+    output_int8_path: str = "models/exported/normalizer_int8.onnx"
 ) -> str:
     """
-    Dynamic quantization function stub to convert FP32 ONNX model to INT8 representation.
+    Applies dynamic INT8 quantization to an existing FP32 ONNX model.
 
     Args:
         output_fp32_path (str): Source FP32 ONNX model path.
@@ -142,34 +143,93 @@ def quantize_normalizer_to_int8(
     return str(dst_path)
 
 
+def export_and_quantize_normalizer(
+    output_fp32_path: str = "models/exported/normalizer_fp32.onnx",
+    output_int8_path: str = "models/exported/normalizer_int8.onnx",
+    model: Optional[nn.Module] = None
+) -> Tuple[str, str]:
+    """
+    Executes full pipeline: exports the model to FP32 ONNX first, and then
+    applies dynamic INT8 quantization to produce the quantized ONNX graph.
+
+    Args:
+        output_fp32_path (str): Output path for the FP32 ONNX model.
+        output_int8_path (str): Output path for the INT8 ONNX model.
+        model (Optional[nn.Module]): PyTorch model instance to export.
+
+    Returns:
+        Tuple[str, str]: (path_to_fp32_onnx, path_to_int8_onnx)
+    """
+    fp32_path = export_normalizer_fp32(output_fp32_path, model=model)
+    int8_path = quantize_normalizer_to_int8(fp32_path, output_int8_path)
+    return fp32_path, int8_path
+
+
 if __name__ == "__main__":
     print("=" * 70)
-    print("ResonantAI Conformer Normalizer - Step 5 Verification")
+    print("ResonantAI Conformer Normalizer - Step 6: INT8 Dynamic Quantization & Benchmark")
     print("=" * 70)
 
-    # 1. Export FP32 ONNX Model
-    model_path = "models/exported/normalizer_fp32.onnx"
-    exported_file = export_normalizer_fp32(model_path)
+    # 1. Run full export and dynamic quantization pipeline
+    fp32_path, int8_path = export_and_quantize_normalizer(
+        output_fp32_path="models/exported/normalizer_fp32.onnx",
+        output_int8_path="models/exported/normalizer_int8.onnx"
+    )
 
-    # 2. Load the exported normalizer_fp32.onnx using onnxruntime.InferenceSession
-    session = ort.InferenceSession(exported_file, providers=["CPUExecutionProvider"])
+    # 2. File size comparison and verification
+    assert os.path.exists(int8_path), f"INT8 model not found at {int8_path}"
+    assert os.path.exists(fp32_path), f"FP32 model not found at {fp32_path}"
 
-    # 3. Generate a dummy float32 NumPy array of shape (1, 20, 80)
+    fp32_size_bytes = os.path.getsize(fp32_path)
+    int8_size_bytes = os.path.getsize(int8_path)
+    fp32_size_kb = fp32_size_bytes / 1024.0
+    int8_size_kb = int8_size_bytes / 1024.0
+    reduction_pct = ((fp32_size_bytes - int8_size_bytes) / fp32_size_bytes) * 100.0
+
+    print("-" * 70)
+    print("MODEL FILE SIZE COMPARISON:")
+    print(f"  FP32 ONNX Model : {fp32_size_bytes:,} bytes ({fp32_size_kb:.2f} KB)")
+    print(f"  INT8 ONNX Model : {int8_size_bytes:,} bytes ({int8_size_kb:.2f} KB)")
+    print(f"  Size Reduction  : {reduction_pct:.2f}% reduction ({fp32_size_kb - int8_size_kb:.2f} KB saved)")
+    print("-" * 70)
+
+    assert int8_size_bytes < fp32_size_bytes, "Quantized INT8 model is not smaller than FP32 model!"
+
+    # 3. Load INT8 model into ONNX Runtime InferenceSession
+    session_options = ort.SessionOptions()
+    session_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+    session_int8 = ort.InferenceSession(int8_path, session_options, providers=["CPUExecutionProvider"])
+    print(f"[PASS] Loaded INT8 model in ONNX Runtime with providers: {session_int8.get_providers()}")
+
+    # 4. Generate dummy float32 NumPy array of shape (1, 20, 80) representing 20 frames of 80-mel bands
     dummy_input_np = np.random.randn(1, 20, 80).astype(np.float32)
 
-    # 4. Perform inference
-    outputs = session.run(["normalized_mel"], {"input_mel": dummy_input_np})
-    output_mel = outputs[0]
+    # Warmup runs (10 iterations)
+    for _ in range(10):
+        _ = session_int8.run(["normalized_mel"], {"input_mel": dummy_input_np})
 
-    # 5. Print output shape and validation confirmation
+    # 5. Measure inference latency over 100 benchmark runs
+    num_runs = 100
+    start_time = time.perf_counter()
+    for _ in range(num_runs):
+        outputs = session_int8.run(["normalized_mel"], {"input_mel": dummy_input_np})
+    end_time = time.perf_counter()
+
+    total_latency_ms = (end_time - start_time) * 1000.0
+    avg_latency_ms = total_latency_ms / float(num_runs)
+    output_tensor = outputs[0]
+
     print("-" * 70)
-    print(f"Input Shape : {dummy_input_np.shape} (dtype: {dummy_input_np.dtype})")
-    print(f"Output Shape: {output_mel.shape} (dtype: {output_mel.dtype})")
+    print("INFERENCE LATENCY BENCHMARK (100 runs on CPU):")
+    print(f"  Input Tensor Shape  : {dummy_input_np.shape} (20 frames x 80 mel bins)")
+    print(f"  Output Tensor Shape : {output_tensor.shape} (dtype: {output_tensor.dtype})")
+    print(f"  Total Duration      : {total_latency_ms:.2f} ms for {num_runs} inferences")
+    print(f"  Average Latency     : {avg_latency_ms:.4f} ms / run")
     print("-" * 70)
 
-    assert output_mel.shape == (1, 20, 80), f"Expected (1, 20, 80), got {output_mel.shape}"
-    assert output_mel.dtype == np.float32, f"Expected float32, got {output_mel.dtype}"
-    assert np.all(np.isfinite(output_mel)), "Output contains non-finite values"
+    assert output_tensor.shape == (1, 20, 80), f"Expected shape (1, 20, 80), got {output_tensor.shape}"
+    assert output_tensor.dtype == np.float32, f"Expected float32, got {output_tensor.dtype}"
+    assert np.all(np.isfinite(output_tensor)), "Output contains NaN or Inf values"
 
-    print("[SUCCESS] Validation confirmed: Normalizer FP32 ONNX model successfully exported and verified via ONNX Runtime inference session.")
+    print("[SUCCESS] Dynamic INT8 Quantization and Performance Benchmark verified successfully!")
     print("=" * 70)
