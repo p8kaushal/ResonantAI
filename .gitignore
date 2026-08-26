@@ -1,0 +1,48 @@
+# Core Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node / Electron Dependencies & Builds
+node_modules/
+dist/
+out/
+build/
+.meta/
+
+# Python Virtual Environments & Caches
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Local Environment & Secret Keys
+.env
+.env.local
+.env.production
+*.pem
+*.key
+
+# Model Weights & Datasets (Trained locally)
+models/raw/
+models/exported/*.onnx
+!models/exported/.gitkeep
+datasets/torgo/
+datasets/ua_speech/
+datasets/processed/
+
+# Temp Local Audio Recordings & Buffers
+*.wav
+*.mp3
+*.raw
+*.pcm
+temp/
+logs/
+*.log
+
+# Supabase Local State
+supabase/.branches/
+supabase/.temp/
