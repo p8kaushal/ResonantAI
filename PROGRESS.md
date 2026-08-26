@@ -2,7 +2,7 @@
 
 ## Phase 1: Base Version (Eureka! 2026 Competition & POC Release)
 - [x] Step 1: Environment & Security Setup (.gitignore, .env.example, directory structure) — verified 2026-08-26
-- [ ] Step 2: System audio dependencies installation (portaudio, sounddevice, BlackHole / VB-Cable)
+- [x] Step 2: System audio dependencies installation (portaudio, sounddevice, BlackHole / VB-Cable) — verified 2026-08-26
 - [ ] Step 3: Supabase DDL migration (tables, indexes, RLS policies)
 - [ ] Step 4: Dataset download & Torgo/UA-Speech augmentation
 - [ ] Step 5: Train Conformer Acoustic Normalizer & export to ONNX

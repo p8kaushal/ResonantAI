@@ -1,0 +1,7 @@
+sounddevice
+numpy
+torch
+onnx
+onnxruntime
+supabase
+pyinstaller
