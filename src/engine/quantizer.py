@@ -8,6 +8,7 @@ as well as dynamic INT8 quantization for low-latency on-device speech inference.
 """
 
 import os
+import sys
 import time
 import inspect
 from pathlib import Path
@@ -19,6 +20,11 @@ import numpy as np
 import onnx
 import onnxruntime as ort
 from onnxruntime.quantization import quantize_dynamic, QuantType
+
+# Ensure project root is on sys.path for standalone script execution
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 
 class DummyConformerNormalizer(nn.Module):

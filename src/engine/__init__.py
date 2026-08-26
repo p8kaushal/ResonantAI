@@ -10,6 +10,8 @@ from .quantizer import (
     export_and_quantize_normalizer,
 )
 from .onnx_runtime import ONNXInferenceEngine
+from .timbre_encoder import SpeakerTimbreEncoder
+from .vocoder import VocosNeuralVocoder
 
 __all__ = [
     "DummyConformerNormalizer",
@@ -17,4 +19,6 @@ __all__ = [
     "quantize_normalizer_to_int8",
     "export_and_quantize_normalizer",
     "ONNXInferenceEngine",
+    "SpeakerTimbreEncoder",
+    "VocosNeuralVocoder",
 ]

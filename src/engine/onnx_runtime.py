@@ -9,12 +9,18 @@ and fallback CPUExecutionProvider).
 """
 
 import os
+import sys
 import time
 from pathlib import Path
 from typing import List, Optional, Union
 
 import numpy as np
 import onnxruntime as ort
+
+# Ensure project root is on sys.path for standalone script execution
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 
 class ONNXInferenceEngine:
