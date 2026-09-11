@@ -11,7 +11,7 @@
 - [x] Step 8: Implement ONNX Runtime execution engine — verified 2026-08-26
 - [x] Step 9: Integrate Vocos neural vocoder & SpeakerTimbreEncoder — verified 2026-08-26
 - [x] Step 10.1: Electron + React Frameless Tray Window & 2-Way IPC Bridge — verified 2026-08-26
-- [ ] Step 10.2: Backend PyAudio Device Enumeration & Direct Speaker Routing (`src/audio/stream_manager.py`)
+- [x] Step 10.2: Backend PyAudio Device Enumeration & Direct Speaker Routing (`src/audio/stream_manager.py`) — verified 2026-08-26
 - [ ] Step 10.3: React UI Audio Device Dropdowns & Live Level Visualizer (`src/ui/App.tsx`)
 - [ ] Step 10.4: End-to-End Live Audio & Virtual Call Driver Verification
 - [ ] Step 11: Launch GoDaddy Airo pitch landing page & comparison widget

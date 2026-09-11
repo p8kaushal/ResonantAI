@@ -49,27 +49,63 @@ class AudioStreamManager:
         data = self.out_buffer.read(frames)
         outdata[:, 0] = data
 
+    def get_system_audio_devices(self) -> dict:
+        devices = sd.query_devices()
+        inputs = []
+        outputs = []
+        for idx, dev in enumerate(devices):
+            if dev["max_input_channels"] > 0:
+                inputs.append({
+                    "index": idx,
+                    "name": dev["name"],
+                    "channels": dev["max_input_channels"],
+                })
+            if dev["max_output_channels"] > 0:
+                outputs.append({
+                    "index": idx,
+                    "name": dev["name"],
+                    "channels": dev["max_output_channels"],
+                })
+        return {"inputs": inputs, "outputs": outputs}
+
     def start_streams(
-        self, process_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None
+        self,
+        process_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        input_device_index: Optional[int] = None,
+        output_device_index: Optional[int] = None,
     ):
         self.processing_callback = process_fn
-        out_idx = self.find_device_index(self.virtual_mic_keyword, is_input=False)
 
-        self.input_stream = sd.InputStream(
-            samplerate=self.sample_rate,
-            blocksize=self.chunk_size,
-            channels=1,
-            dtype="float32",
-            callback=self._input_callback,
-        )
-        self.output_stream = sd.OutputStream(
-            device=out_idx,
-            samplerate=self.sample_rate,
-            blocksize=self.chunk_size,
-            channels=1,
-            dtype="float32",
-            callback=self._output_callback,
-        )
+        if output_device_index is not None:
+            out_idx = output_device_index
+        else:
+            try:
+                out_idx = self.find_device_index(self.virtual_mic_keyword, is_input=False)
+            except ValueError:
+                out_idx = None
+
+        input_kwargs = {
+            "samplerate": self.sample_rate,
+            "blocksize": self.chunk_size,
+            "channels": 1,
+            "dtype": "float32",
+            "callback": self._input_callback,
+        }
+        if input_device_index is not None:
+            input_kwargs["device"] = input_device_index
+
+        output_kwargs = {
+            "samplerate": self.sample_rate,
+            "blocksize": self.chunk_size,
+            "channels": 1,
+            "dtype": "float32",
+            "callback": self._output_callback,
+        }
+        if out_idx is not None:
+            output_kwargs["device"] = out_idx
+
+        self.input_stream = sd.InputStream(**input_kwargs)
+        self.output_stream = sd.OutputStream(**output_kwargs)
 
         self.input_stream.start()
         self.output_stream.start()
