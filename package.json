@@ -5,7 +5,7 @@
   "main": "electron/main.js",
   "scripts": {
     "start": "npm run build && electron .",
-    "build": "echo 'Mock build success'"
+    "build": "node scripts/build.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",

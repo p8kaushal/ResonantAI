@@ -1,6 +1,7 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
 
 let tray = null;
 let window = null;
@@ -8,7 +9,16 @@ let engineActive = true;
 
 function createMenu() {
   return Menu.buildFromTemplate([
-    { label: 'Show Control Center', click: () => window.show() },
+    {
+      label: 'Show Control Center',
+      click: () => {
+        if (window) {
+          if (window.isMinimized()) window.restore();
+          window.show();
+          window.focus();
+        }
+      }
+    },
     {
       label: 'Toggle Resonant AI',
       type: 'checkbox',
@@ -29,7 +39,7 @@ function createMenu() {
 app.whenReady().then(() => {
   window = new BrowserWindow({
     width: 360,
-    height: 480,
+    height: 520,
     show: false,
     frame: false,
     resizable: false,
@@ -40,138 +50,16 @@ app.whenReady().then(() => {
   });
 
   const indexPath = path.join(__dirname, '../dist/index.html');
-  if (fs.existsSync(indexPath)) {
-    window.loadFile(indexPath);
-  } else {
-    // Fallback HTML if dist/index.html does not exist yet
-    const fallbackHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8" />
-          <title>Resonant AI Control Center</title>
-          <style>
-            body {
-              background-color: #0f172a;
-              color: #f8fafc;
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-              padding: 24px 16px;
-              margin: 0;
-              box-sizing: border-box;
-              display: flex;
-              flex-direction: column;
-              height: 100vh;
-              justify-content: space-between;
-              user-select: none;
-            }
-            .header {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              border-bottom: 1px solid #334155;
-              padding-bottom: 12px;
-            }
-            .title {
-              color: #2dd4bf;
-              font-size: 18px;
-              font-weight: 700;
-              margin: 0;
-            }
-            .badge {
-              background: rgba(16, 185, 129, 0.2);
-              color: #34d399;
-              padding: 2px 8px;
-              border-radius: 9999px;
-              font-size: 12px;
-              font-weight: 500;
-            }
-            .card {
-              background: #1e293b;
-              border: 1px solid #334155;
-              border-radius: 8px;
-              padding: 12px;
-              margin-top: 16px;
-              text-align: left;
-            }
-            .card-label {
-              font-size: 11px;
-              color: #94a3b8;
-              margin-bottom: 4px;
-            }
-            .card-value {
-              font-size: 14px;
-              font-weight: 600;
-              color: #e2e8f0;
-            }
-            .btn {
-              width: 100%;
-              padding: 10px;
-              border-radius: 8px;
-              font-weight: 700;
-              font-size: 14px;
-              border: none;
-              cursor: pointer;
-              background-color: #e11d48;
-              color: white;
-            }
-          </style>
-        </head>
-        <body>
-          <div>
-            <div class="header">
-              <h1 class="title">Resonant AI</h1>
-              <span class="badge" id="status-badge">Engine Active</span>
-            </div>
-            <div class="card">
-              <div class="card-label">Target Virtual Mic Output</div>
-              <div class="card-value">BlackHole 2ch (Virtual Driver)</div>
-            </div>
-            <div class="card">
-              <div class="card-label">System Latency Budget</div>
-              <div class="card-value" style="color: #2dd4bf;">28 ms (<35ms SLA)</div>
-            </div>
-          </div>
-          <button class="btn" id="toggle-btn">Disable Audio Processing</button>
-          <script>
-            const { ipcRenderer } = require('electron');
-            let active = true;
-            const btn = document.getElementById('toggle-btn');
-            const badge = document.getElementById('status-badge');
+  window.loadFile(indexPath);
 
-            function updateUI(isActive) {
-              active = isActive;
-              if (active) {
-                badge.textContent = 'Engine Active';
-                badge.style.background = 'rgba(16, 185, 129, 0.2)';
-                badge.style.color = '#34d399';
-                btn.textContent = 'Disable Audio Processing';
-                btn.style.backgroundColor = '#e11d48';
-                btn.style.color = '#ffffff';
-              } else {
-                badge.textContent = 'Bypassed';
-                badge.style.background = 'rgba(244, 63, 94, 0.2)';
-                badge.style.color = '#fb7185';
-                btn.textContent = 'Enable Resonant Engine';
-                btn.style.backgroundColor = '#14b8a6';
-                btn.style.color = '#0f172a';
-              }
-            }
+  window.once('ready-to-show', () => {
+    window.show();
+    window.focus();
+  });
 
-            btn.addEventListener('click', () => {
-              const nextState = !active;
-              updateUI(nextState);
-              ipcRenderer.send('engine-state-changed', nextState);
-            });
-
-            ipcRenderer.on('toggle-engine', (event, state) => {
-              updateUI(state);
-            });
-          </script>
-        </body>
-      </html>
-    `;
-    window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(fallbackHtml)}`);
-  }
+  window.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    console.log(`[Renderer Log] ${message} (${path.basename(sourceId || '')}:${line})`);
+  });
 
   const rawIconPath = path.join(__dirname, '../assets/tray_icon.png');
   const safeIcon = fs.existsSync(rawIconPath) ? rawIconPath : nativeImage.createEmpty();
@@ -180,13 +68,27 @@ app.whenReady().then(() => {
   tray.setToolTip('Resonant AI - Active (<35ms)');
   tray.setContextMenu(createMenu());
 
-  tray.on('click', () => {
-    if (window.isVisible()) {
-      window.hide();
-    } else {
-      window.show();
-      window.focus();
+  ipcMain.handle('get-audio-devices', async () => {
+    try {
+      const venvPath = path.join(__dirname, '../venv/bin/python');
+      const pyCmd = fs.existsSync(venvPath) ? `"${venvPath}"` : 'python3';
+      const cmd = `${pyCmd} -c "import json, sys; sys.path.insert(0, '.'); from src.audio.stream_manager import AudioStreamManager; mgr = AudioStreamManager(); print(json.dumps(mgr.get_system_audio_devices()))"`;
+      const output = execSync(cmd, { cwd: path.join(__dirname, '..'), encoding: 'utf8' });
+      return JSON.parse(output.trim());
+    } catch (err) {
+      console.error('[IPC Main] Device fetch error:', err.message);
+      return {
+        inputs: [{ index: 0, name: 'MacBook Air Microphone', channels: 1 }],
+        outputs: [
+          { index: 1, name: 'MacBook Air Speakers', channels: 2 },
+          { index: 2, name: 'BlackHole 2ch (Virtual Driver)', channels: 2 }
+        ]
+      };
     }
+  });
+
+  ipcMain.on('set-audio-devices', (event, { inputIndex, outputIndex }) => {
+    console.log(`[IPC Main] Setting active input: ${inputIndex}, output: ${outputIndex}`);
   });
 
   ipcMain.on('engine-state-changed', (event, active) => {
@@ -197,10 +99,4 @@ app.whenReady().then(() => {
     }
     console.log(`[IPC Main] Audio Engine Processing: ${active ? 'ENABLED' : 'DISABLED'}`);
   });
-});
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
 });
