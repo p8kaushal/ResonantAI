@@ -130,14 +130,17 @@ function createTray() {
   const iconPath = path.join(__dirname, '../assets/tray_icon.png');
   let icon;
 
-  if (fs.existsSync(iconPath)) {
-    icon = iconPath;
-  } else {
-    console.warn(`[Resonant AI] Warning: Tray icon not found at ${iconPath}. Falling back to empty native image.`);
-    icon = nativeImage.createEmpty();
+  try {
+    if (fs.existsSync(iconPath)) {
+      tray = new Tray(iconPath);
+    } else {
+      console.warn(`[Resonant AI] Warning: Tray icon file missing at ${iconPath}. Using empty icon.`);
+      tray = new Tray(nativeImage.createEmpty());
+    }
+  } catch (err) {
+    console.warn(`[Resonant AI] Tray initialization warning: ${err.message}. Falling back to empty icon.`);
+    tray = new Tray(nativeImage.createEmpty());
   }
-
-  tray = new Tray(icon);
 
   const contextMenu = Menu.buildFromTemplate([
     {
