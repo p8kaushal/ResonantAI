@@ -12,7 +12,7 @@
 - [x] Step 9: Integrate Vocos neural vocoder & SpeakerTimbreEncoder — verified 2026-08-26
 - [x] Step 10: Build Electron + React system tray UI control center (100% complete — device routing & level metering verified) — verified 2026-08-26
 - [x] Step 10.2: Backend PyAudio Device Enumeration & Direct Speaker Routing (`src/audio/stream_manager.py`) — verified 2026-08-26
-- [x] Step 10.3: React UI Audio Device Dropdowns & Live Level Visualizer (`src/ui/App.tsx`, export mismatch fixed & bundle verified) — verified 2026-08-26
+- [x] Step 10.3: React UI Audio Device Dropdowns & Live Level Visualizer (`src/ui/App.tsx`, functional baseline UI & bundle verified) — verified 2026-08-26
 - [x] Step 10.4: End-to-End Live Audio Daemon & Virtual Call Driver Verification (automatic startup audio stream initialization & sys.path import resolution verified) — verified 2026-08-26
 - [ ] Step 10.5: Real-Time ONNX Inference Integration & Ring Buffer Pipeline
   - [ ] 10.5a: Offline verification script (`scripts/test_onnx_offline.py`) and dysarthric audio restoration validation.
