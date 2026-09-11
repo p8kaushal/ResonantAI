@@ -1,5 +1,5 @@
 // electron/main.js
-const { app, BrowserWindow, Tray, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -128,7 +128,16 @@ function createWindow() {
 
 function createTray() {
   const iconPath = path.join(__dirname, '../assets/tray_icon.png');
-  tray = new Tray(iconPath);
+  let icon;
+
+  if (fs.existsSync(iconPath)) {
+    icon = iconPath;
+  } else {
+    console.warn(`[Resonant AI] Warning: Tray icon not found at ${iconPath}. Falling back to empty native image.`);
+    icon = nativeImage.createEmpty();
+  }
+
+  tray = new Tray(icon);
 
   const contextMenu = Menu.buildFromTemplate([
     {
