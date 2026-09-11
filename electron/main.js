@@ -1,12 +1,32 @@
-// electron/main.js
 const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
 let tray = null;
 let window = null;
+let engineActive = true;
 
-function createWindow() {
+function createMenu() {
+  return Menu.buildFromTemplate([
+    { label: 'Show Control Center', click: () => window.show() },
+    {
+      label: 'Toggle Resonant AI',
+      type: 'checkbox',
+      checked: engineActive,
+      click: (item) => {
+        engineActive = item.checked;
+        if (window) {
+          window.webContents.send('toggle-engine', engineActive);
+        }
+        console.log(`[IPC Main] Audio Engine Processing: ${engineActive ? 'ENABLED' : 'DISABLED'}`);
+      }
+    },
+    { type: 'separator' },
+    { label: 'Quit', click: () => app.quit() }
+  ]);
+}
+
+app.whenReady().then(() => {
   window = new BrowserWindow({
     width: 360,
     height: 480,
@@ -112,68 +132,53 @@ function createWindow() {
             </div>
           </div>
           <button class="btn" id="toggle-btn">Disable Audio Processing</button>
+          <script>
+            const { ipcRenderer } = require('electron');
+            let active = true;
+            const btn = document.getElementById('toggle-btn');
+            const badge = document.getElementById('status-badge');
+
+            function updateUI(isActive) {
+              active = isActive;
+              if (active) {
+                badge.textContent = 'Engine Active';
+                badge.style.background = 'rgba(16, 185, 129, 0.2)';
+                badge.style.color = '#34d399';
+                btn.textContent = 'Disable Audio Processing';
+                btn.style.backgroundColor = '#e11d48';
+                btn.style.color = '#ffffff';
+              } else {
+                badge.textContent = 'Bypassed';
+                badge.style.background = 'rgba(244, 63, 94, 0.2)';
+                badge.style.color = '#fb7185';
+                btn.textContent = 'Enable Resonant Engine';
+                btn.style.backgroundColor = '#14b8a6';
+                btn.style.color = '#0f172a';
+              }
+            }
+
+            btn.addEventListener('click', () => {
+              const nextState = !active;
+              updateUI(nextState);
+              ipcRenderer.send('engine-state-changed', nextState);
+            });
+
+            ipcRenderer.on('toggle-engine', (event, state) => {
+              updateUI(state);
+            });
+          </script>
         </body>
       </html>
     `;
     window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(fallbackHtml)}`);
   }
 
-  // Hide window when it loses focus
-  window.on('blur', () => {
-    if (!window.webContents.isDevToolsOpened()) {
-      window.hide();
-    }
-  });
-}
-
-function createTray() {
-  const iconPath = path.join(__dirname, '../assets/tray_icon.png');
-  let icon;
-
-  try {
-    if (fs.existsSync(iconPath)) {
-      tray = new Tray(iconPath);
-    } else {
-      console.warn(`[Resonant AI] Warning: Tray icon file missing at ${iconPath}. Using empty icon.`);
-      tray = new Tray(nativeImage.createEmpty());
-    }
-  } catch (err) {
-    console.warn(`[Resonant AI] Tray initialization warning: ${err.message}. Falling back to empty icon.`);
-    tray = new Tray(nativeImage.createEmpty());
-  }
-
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Show Control Center',
-      click: () => {
-        if (window) {
-          window.show();
-          window.focus();
-        }
-      }
-    },
-    {
-      label: 'Toggle Resonant AI',
-      type: 'checkbox',
-      checked: true,
-      click: (item) => {
-        if (window && window.webContents) {
-          window.webContents.send('toggle-engine', item.checked);
-        }
-      }
-    },
-    { type: 'separator' },
-    {
-      label: 'Quit',
-      click: () => {
-        app.isQuitting = true;
-        app.quit();
-      }
-    }
-  ]);
+  const rawIconPath = path.join(__dirname, '../assets/tray_icon.png');
+  const safeIcon = fs.existsSync(rawIconPath) ? rawIconPath : nativeImage.createEmpty();
+  tray = new Tray(safeIcon);
 
   tray.setToolTip('Resonant AI - Active (<35ms)');
-  tray.setContextMenu(contextMenu);
+  tray.setContextMenu(createMenu());
 
   tray.on('click', () => {
     if (window.isVisible()) {
@@ -183,34 +188,15 @@ function createTray() {
       window.focus();
     }
   });
-}
 
-app.whenReady().then(() => {
-  createWindow();
-  createTray();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+  ipcMain.on('engine-state-changed', (event, active) => {
+    engineActive = active;
+    tray.setContextMenu(createMenu());
+    if (window) {
+      window.webContents.send('toggle-engine', active);
     }
+    console.log(`[IPC Main] Audio Engine Processing: ${active ? 'ENABLED' : 'DISABLED'}`);
   });
-});
-
-// IPC communication handlers
-ipcMain.on('get-engine-status', (event) => {
-  event.reply('engine-status', { active: true, latencyMs: 28 });
-});
-
-ipcMain.on('toggle-engine', (event, active) => {
-  console.log(`[Resonant AI] Engine toggled: ${active ? 'Active' : 'Disabled'}`);
-});
-
-ipcMain.on('set-latency', (event, latencyMs) => {
-  console.log(`[Resonant AI] Latency updated: ${latencyMs} ms`);
-});
-
-ipcMain.on('close-window', () => {
-  if (window) window.hide();
 });
 
 app.on('window-all-closed', () => {

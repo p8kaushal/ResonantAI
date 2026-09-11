@@ -4,7 +4,7 @@
   "description": "Resonant AI - Real-Time Speech Restoration",
   "main": "electron/main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "npm run build && electron .",
     "build": "echo 'Mock build success'"
   },
   "dependencies": {
