@@ -10,10 +10,16 @@
 - [x] Step 7: Build thread-safe AudioRingBuffer & AudioStreamManager — verified 2026-08-26
 - [x] Step 8: Implement ONNX Runtime execution engine — verified 2026-08-26
 - [x] Step 9: Integrate Vocos neural vocoder & SpeakerTimbreEncoder — verified 2026-08-26
-- [x] Step 10: Build Electron + React system tray UI control center (fixed dBFS mic level calibration -52 to -8 dBFS verified) — verified 2026-08-26
+- [x] Step 10: Build Electron + React system tray UI control center (100% complete — device routing & level metering verified) — verified 2026-08-26
 - [x] Step 10.2: Backend PyAudio Device Enumeration & Direct Speaker Routing (`src/audio/stream_manager.py`) — verified 2026-08-26
 - [x] Step 10.3: React UI Audio Device Dropdowns & Live Level Visualizer (`src/ui/App.tsx`, export mismatch fixed & bundle verified) — verified 2026-08-26
 - [x] Step 10.4: End-to-End Live Audio Daemon & Virtual Call Driver Verification (automatic startup audio stream initialization & sys.path import resolution verified) — verified 2026-08-26
+- [ ] Step 10.5: Real-Time ONNX Inference Integration & Ring Buffer Pipeline
+  - [ ] 10.5a: Offline verification script (`scripts/test_onnx_offline.py`) and dysarthric audio restoration validation.
+  - [ ] 10.5b: Polyphase sample-rate conversion ($44.1\text{ kHz} / 48\text{ kHz} \leftrightarrow 16\text{ kHz}$).
+  - [ ] 10.5c: 160 ms sliding ring buffer implementation in `src/audio/audio_daemon.py`.
+  - [ ] 10.5d: Overlap-add (OLA) Hanning window synthesis smoothing.
+  - [ ] 10.5e: ONNX Conformer/Vocos CPU execution timeout fallback.
 - [ ] Step 11: Launch GoDaddy Airo pitch landing page & comparison widget
 
 ## Phase 2: Enhancements & Enterprise Scaling

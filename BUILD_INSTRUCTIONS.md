@@ -441,6 +441,23 @@ class AudioStreamManager:
 
 ---
 
+### Section 4.3: Real-Time Sliding Ring Buffer & ONNX Resynthesis Architecture
+
+1. **Sample-Rate Conversion**: Input capture resampled from native hardware rate (44.1 kHz / 48 kHz) down to 16 kHz mono for ML model processing using linear polyphase resampling.
+2. **Sliding Ring Buffer**: 160 ms rolling window (2,560 samples at 16 kHz). Every incoming 15–30 ms chunk pushes into FIFO buffer and triggers ML inference.
+3. **ONNX Conformer & Vocos Processing**: Conformer computes normalized mel-spectrograms from raw speech; Vocos resynthesizes 16 kHz PCM audio frames.
+4. **Overlap-Add (OLA) Smoothing**: Apply Hanning window with 25% overlap-add on synthesized output frames to prevent click/pop artifacts.
+5. **Upsampling & Playback**: Upsample 16 kHz restored audio back to target output rate (44.1 kHz / 48 kHz).
+6. **Performance Failsafe**: CPU/Metal execution timeout fallback (if inference > 30 ms, fall back to raw passthrough for current chunk).
+
+---
+
+### Section 4.4: Offline Speech Restoration Test Verification
+
+* **Offline Test Verification Script Specification**: `scripts/test_onnx_offline.py` loads dysarthric test WAV samples (`Dysarthria Example`), processes them offline through the ONNX Conformer/Vocos pipeline, and exports `output_restored.wav` for audio quality verification prior to live streaming deployment.
+
+---
+
 ### Feature 2: Model Training, INT8 Quantization & ONNX Inference Engine
 
 #### Objective
