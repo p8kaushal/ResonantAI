@@ -21,10 +21,16 @@ __pycache__/
 
 # Local Environment & Secret Keys
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 *.pem
 *.key
+*.pfx
+*.p12
+*.cer
+*secret*
+*credentials*
+service-account*.json
 
 # Model Weights & Datasets (Trained locally)
 models/raw/
@@ -47,3 +53,9 @@ logs/
 # Supabase Local State
 supabase/.branches/
 supabase/.temp/
+
+# IDE & Editor Configuration
+.vscode/
+.idea/
+*.swp
+*.swo
